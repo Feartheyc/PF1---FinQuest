@@ -1,9 +1,7 @@
 import streamlit as st
 import random
 
-# --- EXPANDED COMPARISON DATABASE ---
 MASTER_SCENARIOS = [
-    # --- TYPE: SMS / WHATSAPP ---
     {
         "id": "sms_electricity",
         "type": "SMS",
@@ -38,8 +36,6 @@ MASTER_SCENARIOS = [
             "reason": "International number (+1), 'Like videos to earn' is a classic Ponzi scam pattern."
         }
     },
-    
-    # --- TYPE: BROWSER / LINKS ---
     {
         "id": "link_bank",
         "type": "Browser",
@@ -91,8 +87,6 @@ MASTER_SCENARIOS = [
             "reason": "Official IRCTC domain."
         }
     },
-
-    # --- TYPE: CALL TRANSCRIPTS ---
     {
         "id": "call_arrest",
         "type": "Call",
@@ -161,7 +155,7 @@ MASTER_SCENARIOS = [
             "reason": "Directs you to the official app. Does not ask for sensitive info over call."
         }
     },
-     {
+    {
         "id": "sms_lottery",
         "type": "SMS",
         "scenario": "Lottery Win",
@@ -184,83 +178,61 @@ def init_cyber_game():
     if "cyber_deck" not in st.session_state or not st.session_state.cyber_deck:
         st.session_state.cyber_score = 0
         st.session_state.cyber_total = 5
-        
-        shuffled_scenarios = MASTER_SCENARIOS.copy()
-        random.shuffle(shuffled_scenarios)
-        
-        selected_scenarios = shuffled_scenarios[:5]
-        
+
+        shuffled = MASTER_SCENARIOS.copy()
+        random.shuffle(shuffled)
+        selected = shuffled[:5]
+
         deck = []
-        for s in selected_scenarios:
+        for s in selected:
             order = ["option_a", "option_b"]
             random.shuffle(order)
-            deck.append({
-                "data": s,
-                "order": order
-            })
-        
+            deck.append({"data": s, "order": order})
+
         st.session_state.cyber_deck = deck
         st.session_state.cyber_current_idx = 0
 
 def render_phone_screen(data, display_type):
-    """Renders a single phone screen UI based on type"""
-    
     sender = data['sender']
     content = data['content']
-    
-    # --- FIXED: NO INDENTATION IN HTML STRINGS ---
-    
-    if display_type == "Browser":
-        inner_html = f"""
-<div class="browser-bar">
-<span style="color:#10b981; margin-right:5px;">🔒</span> {sender}
-</div>
-<div class="browser-content">
-<div style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">{content}</div>
-<div style="background:#e2e8f0; height:80px; width:100%; border-radius:4px; margin-bottom:10px;"></div>
-<div style="background:#e2e8f0; height:10px; width:60%; border-radius:2px;"></div>
-</div>
-"""
-        
-    elif display_type == "Call":
-        inner_html = f"""
-<div class="call-header">
-<div style="font-size:2rem;">👤</div>
-<div style="font-weight:bold; color:#1e293b;">{sender}</div>
-<div style="font-size:0.7rem; color:#ef4444;">• Rec 00:45</div>
-</div>
-<div class="transcript-box">
-{content}
-</div>
-<div style="text-align:center; margin-top:10px;">
-<span style="font-size:1.5rem;">🔇 📞 🔊</span>
-</div>
-"""
-        
-    else:
-        # SMS / WhatsApp
-        icon = "💬" if display_type == "SMS" else "🟢"
-        inner_html = f"""
-<div class="top-bar">Today, 10:42 AM</div>
-<div class="sender-id">{icon} {sender}</div>
-<div class="msg-bubble">
-{content}
-<div class="msg-meta">Now</div>
-</div>
-"""
 
-    # RENDER FRAME (NO INDENTATION)
-    st.markdown(f"""
-<div class="phone-frame">
-<div class="phone-screen">
-{inner_html}
-</div>
-</div>
-""", unsafe_allow_html=True)
+    if display_type == "Browser":
+        inner = f"""<div class="browser-bar"><span style="color:#10b981; margin-right:5px;">🔒</span> {sender}</div><div class="browser-content"><div style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">{content}</div><div style="background:#e2e8f0; height:80px; width:100%; border-radius:4px; margin-bottom:10px;"></div><div style="background:#e2e8f0; height:10px; width:60%; border-radius:2px;"></div></div>"""
+    elif display_type == "Call":
+        inner = f"""<div class="call-header"><div style="font-size:2rem;">👤</div><div style="font-weight:bold; color:#1e293b;">{sender}</div><div style="font-size:0.7rem; color:#ef4444;">• Rec 00:45</div></div><div class="transcript-box">{content}</div><div style="text-align:center; margin-top:10px;"><span style="font-size:1.5rem;">🔇 📞 🔊</span></div>"""
+    else:
+        icon = "💬" if display_type == "SMS" else "🟢"
+        inner = f"""<div class="top-bar">Today, 10:42 AM</div><div class="sender-id">{icon} {sender}</div><div class="msg-bubble">{content}<div class="msg-meta">Now</div></div>"""
+
+    st.markdown(f'<div class="phone-frame"><div class="phone-screen">{inner}</div></div>', unsafe_allow_html=True)
+
+def check_selection(selected_item):
+    is_safe = (selected_item['type'] == "safe")
+
+    if is_safe:
+        st.session_state.cyber_score += 1
+        title = "🎉 Correct!"
+        msg = f"**Well done!**\n\n{selected_item['reason']}"
+    else:
+        title = "⚠️ Caught by Scam!"
+        msg = f"**You picked the SCAM.**\n\nReason: {selected_item['reason']}"
+
+    @st.dialog(title)
+    def show_feedback():
+        if is_safe:
+            st.success(msg)
+        else:
+            st.error(msg)
+
+        if st.button("Next Scenario ➡️"):
+            st.session_state.cyber_current_idx += 1
+            st.rerun()
+
+    show_feedback()
 
 def render_phishing_game():
     init_cyber_game()
-    
+
     st.markdown("""
     <style>
         .phone-frame {
@@ -284,21 +256,14 @@ def render_phishing_game():
             display: flex;
             flex-direction: column;
         }
-        
-        /* SMS Styles */
         .top-bar { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-bottom: 10px; }
         .sender-id { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: #0f172a; }
         .msg-bubble { background: #ffffff; padding: 12px; border-radius: 0 12px 12px 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; line-height: 1.4; }
         .msg-meta { text-align: right; font-size: 0.65rem; color: #cbd5e1; margin-top: 5px; }
-        
-        /* Browser Styles */
         .browser-bar { background: #e2e8f0; padding: 8px; border-radius: 8px; font-size: 0.75rem; color: #334155; font-weight:bold; margin-bottom: 15px; border: 1px solid #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .browser-content { text-align: center; }
-        
-        /* Call Styles */
         .call-header { text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
         .transcript-box { background: #fff1f2; color: #881337; padding: 10px; border-radius: 8px; font-size: 0.8rem; font-style: italic; border-left: 3px solid #f43f5e; }
-
         .vs-badge { text-align: center; font-size: 2rem; font-weight: 800; color: #facc15; margin-top: 120px; }
     </style>
     """, unsafe_allow_html=True)
@@ -307,11 +272,10 @@ def render_phishing_game():
     st.markdown(f"<p style='text-align:center; color:#94a3b8;'>Scenario {st.session_state.cyber_current_idx + 1} of {st.session_state.cyber_total} | Score: {st.session_state.cyber_score}</p>", unsafe_allow_html=True)
 
     if st.session_state.cyber_current_idx < st.session_state.cyber_total:
-        
         current_item = st.session_state.cyber_deck[st.session_state.cyber_current_idx]
         q_data = current_item['data']
         order = current_item['order']
-        
+
         item_1 = q_data[order[0]]
         item_2 = q_data[order[1]]
         scen_type = q_data['type']
@@ -319,7 +283,6 @@ def render_phishing_game():
         st.markdown(f"<h3 style='text-align:center; margin-bottom:30px; color:#38bdf8;'>Category: {scen_type}</h3>", unsafe_allow_html=True)
 
         c1, c2, c3 = st.columns([1, 0.2, 1])
-        
         with c1:
             st.markdown("<div style='text-align:center; font-weight:bold; margin-bottom:10px; color:#94a3b8'>Option A</div>", unsafe_allow_html=True)
             render_phone_screen(item_1, scen_type)
@@ -351,27 +314,3 @@ def render_phishing_game():
         if st.button("⬅ Return to Main Menu", use_container_width=True):
             st.session_state.game['state'] = "MAIN_MENU"
             st.rerun()
-
-def check_selection(selected_item):
-    is_safe = (selected_item['type'] == "safe")
-    
-    if is_safe:
-        st.session_state.cyber_score += 1
-        title = "🎉 Correct!"
-        msg = f"**Well done!**\n\n{selected_item['reason']}"
-    else:
-        title = "⚠️ Caught by Scam!"
-        msg = f"**You picked the SCAM.**\n\nReason: {selected_item['reason']}"
-
-    @st.dialog(title)
-    def show_feedback():
-        if is_safe:
-            st.success(msg)
-        else:
-            st.error(msg)
-        
-        if st.button("Next Scenario ➡️"):
-            st.session_state.cyber_current_idx += 1
-            st.rerun()
-    
-    show_feedback()
