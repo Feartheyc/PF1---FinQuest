@@ -36,7 +36,8 @@ COMMON_UI_DICTIONARY = {
         "Cash": "नकद",
         "Savings": "बचत",
         "Debt": "कर्ज",
-        "Invest": "निवेश",
+        "Invest Pool": "निवेश पूल",
+        "Score": "स्कोर",
         "Stress": "तनाव",
         "Insurance": "बीमा",
         "Select Your Persona": "अपना पात्र चुनें",
@@ -60,7 +61,8 @@ COMMON_UI_DICTIONARY = {
         "Cash": "रोख",
         "Savings": "बचत",
         "Debt": "कर्ज",
-        "Invest": "गुंतवणूक",
+        "Invest Pool": "गुंतवणूक पूल",
+        "Score": "गुण",
         "Stress": "तणाव",
         "Insurance": "विमा",
         "Select Your Persona": "तुमचे व्यक्तिमत्त्व निवडा",
@@ -84,7 +86,8 @@ COMMON_UI_DICTIONARY = {
         "Cash": "নগদ",
         "Savings": "সঞ্চয়",
         "Debt": "ঋণ",
-        "Invest": "বিনিয়োগ",
+        "Invest Pool": "বিনিয়োগ পুল",
+        "Score": "স্কোর",
         "Stress": "মানসিক চাপ",
         "Insurance": "বীমা",
         "Select Your Persona": "আপনার চরিত্র নির্বাচন করুন",
@@ -159,7 +162,6 @@ def img_to_base64(path):
 
 @st.cache_data(show_spinner=False, max_entries=200)
 def generate_audio_b64(text, lang_code):
-    """Generates server-side base64 MP3 payload via gTTS for instant click-to-play audio."""
     if not text:
         return ""
     try:
@@ -184,10 +186,8 @@ def render_interactive_dialogue(avatar, npc, text):
     curr_lang = st.session_state.get("selected_lang", "English")
     lang_code = LANG_CODE_MAP.get(curr_lang, "en")
 
-    # Generate audio for character narration on-demand
     main_audio_b64 = generate_audio_b64(translated_main_text, lang_code)
 
-    # Highlight glossary keywords
     sorted_keys = sorted(GLOSSARY.keys(), key=len, reverse=True)
     for term in sorted_keys:
         pattern = re.compile(rf"\b({re.escape(term)})\b", re.IGNORECASE)
@@ -201,90 +201,181 @@ def render_interactive_dialogue(avatar, npc, text):
     html_content = f"""
     <html>
     <head>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-            body {{ font-family: 'Poppins', sans-serif; background-color: transparent; color: #e2e8f0; margin: 0; padding: 4px; overflow: hidden; }}
-            .dialogue-container {{ display: flex; gap: 15px; align-items: flex-start; }}
-            .avatar-box {{ width: 50px; height: 50px; background: #334155; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid #475569; flex-shrink: 0; }}
-            .speech-bubble {{ background: #1e293b; border: 1px solid #475569; padding: 15px 20px; border-radius: 0 15px 15px 15px; color: #e2e8f0; flex-grow: 1; font-size: 16px; position: relative; }}
-            
-            .header-bar {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }}
-            .speaker-name {{ color: #facc15; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }}
-            
-            .voice-btn {{ 
-                background: rgba(250, 204, 21, 0.15); 
-                border: 1px solid rgba(250, 204, 21, 0.4); 
-                color: #fde047; 
-                padding: 2px 10px; 
-                border-radius: 20px; 
-                font-size: 0.72rem; 
-                font-weight: 600; 
-                cursor: pointer; 
-                transition: 0.2s; 
+            body {{ 
+                font-family: 'Poppins', sans-serif; 
+                background: transparent; 
+                color: #e2e8f0; 
+                margin: 0; 
+                padding: 0; 
+                overflow: hidden; 
+            }}
+            .dialogue-wrapper {{
+                display: flex;
+                gap: 16px;
+                align-items: flex-start;
+            }}
+            .avatar-badge {{
+                width: 52px;
+                height: 52px;
+                background: rgba(30, 41, 59, 0.8);
+                border: 2px solid #475569;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 26px;
+                flex-shrink: 0;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            }}
+            .bubble-body {{
+                flex-grow: 1;
+                background: rgba(15, 23, 42, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 0 16px 16px 16px;
+                padding: 16px 20px;
+                position: relative;
+            }}
+            .header-row {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }}
+            .npc-name {{
+                color: #facc15;
+                font-size: 0.82rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+            }}
+            .listen-pill {{
+                background: rgba(250, 204, 21, 0.12);
+                border: 1px solid rgba(250, 204, 21, 0.35);
+                color: #fde047;
+                padding: 3px 10px;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
                 display: flex;
                 align-items: center;
                 gap: 4px;
             }}
-            .voice-btn:hover {{ background: #facc15; color: #0f172a; transform: scale(1.04); }}
-            
-            .highlight {{ color: #facc15; text-decoration: underline; text-decoration-style: dotted; cursor: pointer; font-weight: 600; }}
-            
-            #modal {{ display: none; position: fixed; bottom: 5px; left: 5px; right: 5px; background: #0f172a; border: 1px solid #facc15; border-left: 5px solid #facc15; padding: 12px; border-radius: 8px; z-index: 9999; }}
-            .modal-header {{ display: flex; justify-content: space-between; align-items: center; }}
-            .modal-title {{ color: #facc15; font-weight: bold; font-size: 0.85em; display: flex; align-items: center; gap: 8px; }}
-            .modal-close {{ cursor: pointer; color: #94a3b8; font-size: 1.2em; }}
+            .listen-pill:hover {{
+                background: #facc15;
+                color: #0f172a;
+                transform: scale(1.04);
+            }}
+            .story-text {{
+                font-size: 0.96rem;
+                line-height: 1.65;
+                color: #cbd5e1;
+                margin: 0;
+            }}
+            .highlight {{
+                color: #facc15;
+                text-decoration: underline;
+                text-decoration-style: dotted;
+                text-underline-offset: 3px;
+                cursor: pointer;
+                font-weight: 600;
+            }}
+            .highlight:hover {{
+                color: #fef08a;
+            }}
+            #def-card {{
+                display: none;
+                margin-top: 12px;
+                background: #090d16;
+                border: 1px solid #facc15;
+                border-left: 4px solid #facc15;
+                padding: 12px 16px;
+                border-radius: 10px;
+                animation: fadeIn 0.2s ease-out;
+            }}
+            .def-header {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 4px;
+            }}
+            .def-title {{
+                color: #facc15;
+                font-weight: 700;
+                font-size: 0.88rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }}
+            .def-close {{
+                cursor: pointer;
+                color: #94a3b8;
+                font-size: 1.2rem;
+                line-height: 1;
+            }}
+            .def-body {{
+                color: #e2e8f0;
+                font-size: 0.88rem;
+                line-height: 1.5;
+            }}
+            @keyframes fadeIn {{
+                from {{ opacity: 0; transform: translateY(-4px); }}
+                to {{ opacity: 1; transform: translateY(0); }}
+            }}
         </style>
     </head>
     <body>
-        <div class="dialogue-container">
-            <div class="avatar-box">{avatar}</div>
-            <div class="speech-bubble">
-                <div class="header-bar">
-                    <span class="speaker-name">{t(npc)}</span>
-                    <button class="voice-btn" onclick="playVoice('{main_audio_b64}')">🔊 Listen</button>
+        <div class="dialogue-wrapper">
+            <div class="avatar-badge">{avatar}</div>
+            <div class="bubble-body">
+                <div class="header-row">
+                    <span class="npc-name">{t(npc)}</span>
+                    <button class="listen-pill" onclick="playVoice('{main_audio_b64}')">🔊 Listen</button>
                 </div>
-                {processed_text}
-            </div>
-        </div>
-
-        <div id="modal">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <span id="modal-term">TERM</span>
-                    <button class="voice-btn" id="modal-audio-btn">🔊</button>
+                <p class="story-text">{processed_text}</p>
+                <div id="def-card">
+                    <div class="def-header">
+                        <div class="def-title">
+                            <span id="def-term">TERM</span>
+                            <button class="listen-pill" id="def-audio-btn" style="padding: 1px 8px;">🔊</button>
+                        </div>
+                        <span class="def-close" onclick="closeDef()">×</span>
+                    </div>
+                    <div id="def-desc" class="def-body">Definition</div>
                 </div>
-                <span class="modal-close" onclick="closeModal()">×</span>
             </div>
-            <div id="modal-text" style="color: #cbd5e1; font-size: 0.9em; margin-top: 6px;">Def</div>
         </div>
 
         <script>
-            var activeAudio = null;
+            var currentAudio = null;
 
-            function playVoice(b64Data) {{
-                if (!b64Data) return;
-                if (activeAudio) {{
-                    activeAudio.pause();
-                    activeAudio.currentTime = 0;
+            function playVoice(b64) {{
+                if (!b64) return;
+                if (currentAudio) {{
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
                 }}
-                activeAudio = new Audio("data:audio/mp3;base64," + b64Data);
-                activeAudio.play().catch(function(e) {{ console.log("Audio playback error:", e); }});
+                currentAudio = new Audio("data:audio/mp3;base64," + b64);
+                currentAudio.play().catch(function(e) {{ console.log(e); }});
             }}
 
             function showDef(term, def, audioB64) {{
-                document.getElementById('modal-term').innerText = term;
-                document.getElementById('modal-text').innerText = def;
-                var btn = document.getElementById('modal-audio-btn');
+                document.getElementById('def-term').innerText = term;
+                document.getElementById('def-desc').innerText = def;
+                var btn = document.getElementById('def-audio-btn');
                 btn.onclick = function() {{ playVoice(audioB64); }};
-                document.getElementById('modal').style.display = 'block';
+                document.getElementById('def-card').style.display = 'block';
             }}
 
-            function closeModal() {{ 
-                document.getElementById('modal').style.display = 'none'; 
-                if (activeAudio) activeAudio.pause();
+            function closeDef() {{
+                document.getElementById('def-card').style.display = 'none';
+                if (currentAudio) currentAudio.pause();
             }}
         </script>
     </body>
     </html>
     """
-    components.html(html_content, height=145)
+    components.html(html_content, height=160)

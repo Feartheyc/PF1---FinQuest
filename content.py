@@ -1048,6 +1048,7 @@ def _format_event(evt):
         choices_dict[text] = eff_copy
 
     return {
+        "title": evt.get("title", "Level"),
         "story": evt["story"],
         "choices": choices_dict,
         "npc": evt["npc"],
