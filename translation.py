@@ -19,13 +19,12 @@ LANG_CODE_MAP = {
 }
 
 def Translating(text, lang="English"):
-    if lang not in LANG_CODE_MAP:
-        print(f"Warning: '{lang}' not found in LANG_CODE_MAP, returning original text")
+    if lang not in LANG_CODE_MAP or not text:
         return text
     lang_code = LANG_CODE_MAP[lang]
     translator = Translator(to_lang=lang_code)
     try:
         return translator.translate(text)
     except Exception as e:
-        print(f"Translation failed for '{text}' to '{lang_code}':", e)
+        print(f"Translation warning for '{text}' to '{lang_code}':", e)
         return text

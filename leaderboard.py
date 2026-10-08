@@ -3,43 +3,35 @@ import streamlit as st
 
 DB_FILE = "leaderboard.db"
 
-# --- HELPER FUNCTIONS (Must be defined before they are called) ---
-
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS leaderboard (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            net_worth INTEGER NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(DB_FILE, timeout=10) as conn:
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS leaderboard (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                net_worth INTEGER NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
 
 def add_score(username: str, net_worth: int):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("INSERT INTO leaderboard (username, net_worth) VALUES (?, ?)", (username, net_worth))
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(DB_FILE, timeout=10) as conn:
+        c = conn.cursor()
+        c.execute("INSERT INTO leaderboard (username, net_worth) VALUES (?, ?)", (username, net_worth))
+        conn.commit()
 
 def get_leaderboard(limit: int = 10):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT username, net_worth FROM leaderboard ORDER BY net_worth DESC LIMIT ?", (limit,))
-    rows = c.fetchall()
-    conn.close()
-    return rows
-
-# --- MAIN UI FUNCTION ---
+    with sqlite3.connect(DB_FILE, timeout=10) as conn:
+        c = conn.cursor()
+        c.execute("SELECT username, net_worth FROM leaderboard ORDER BY net_worth DESC LIMIT ?", (limit,))
+        rows = c.fetchall()
+        return rows
 
 def render_leaderboard_ui(final_score: int = None, stats: dict = None):
-    # This now works because init_db is defined above in the same file
     init_db() 
-    
+
     st.markdown("""
         <style>
         .stats-container {
@@ -64,7 +56,6 @@ def render_leaderboard_ui(final_score: int = None, stats: dict = None):
     if stats is None:
         stats = {"role": "Employee", "cash": 0, "savings": 0, "debt": 0, "invest": 0, "stress": "0%", "insurance": "None"}
 
-    # Horizontal Stats Bar
     st.markdown(f"""
         <div class="stats-container">
             <div class="stat-box"><div class="stat-label">Role</div><div class="stat-value">{stats['role']}</div></div>
@@ -75,7 +66,6 @@ def render_leaderboard_ui(final_score: int = None, stats: dict = None):
         </div>
     """, unsafe_allow_html=True)
 
-    # Submission Logic
     if final_score is not None:
         st.write(f"### Your Final Net Worth: ₹{final_score:,}")
         with st.form("score_form"):
@@ -86,7 +76,6 @@ def render_leaderboard_ui(final_score: int = None, stats: dict = None):
                 st.success("Score added!")
                 st.rerun()
 
-    # Table Display
     rows = get_leaderboard(10)
     if rows:
         st.table([{"Rank": i+1, "Name": r[0], "Net Worth": f"₹{r[1]:,}"} for i, r in enumerate(rows)])
