@@ -33,7 +33,7 @@ apply_custom_css()
 def render_main_menu():
     st.markdown(f"""
         <div class="menu-header-box">
-            <div class="menu-title">🌏 {t("FinLife")}</div>
+            <div class="menu-title">🌏 {t("FinQuest")}</div>
             <div class="menu-subtitle">{t("A Financial Literacy RPG Journey")}</div>
         </div>
     """, unsafe_allow_html=True)
@@ -66,7 +66,7 @@ def render_credits():
     with col2:
         st.markdown(f"""
             <div class="menu-card">
-                <h3 style="color:#4ade80; margin-top:0;">{t("Developed By Team FinLife")}</h3>
+                <h3 style="color:#4ade80; margin-top:0;">{t("Developed By Team FinQuest")}</h3>
                 <p style="color:#94a3b8; font-size:0.85rem;">{t("Created for the Athrava Project Friday 2026")}</p>
                 <hr style="border-color: #334155; margin: 15px 0;">
                 <p style="text-align:left; font-size:0.9rem; line-height:1.6;">
